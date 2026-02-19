@@ -4,7 +4,7 @@ A little exercise to build a web application following an agile development proc
 
 ## Product vision statement
 
-See instructions. Delete this line and place the Product Vision Statement here.
+A single place for the NYU community to post, discover, and RSVP to campus events—so nothing gets missed and every event finds its audience.
 
 ## User stories
 

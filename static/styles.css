@@ -1,0 +1,119 @@
+/* ===== Global ===== */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
+
+
+/* ===== Topbar (2 rows, mobile safe) ===== */
+.topbar{
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-bottom: 2px solid #111;
+  padding: 12px 14px;
+  z-index: 10;
+}
+
+.topbar__brand{
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1.05;
+  margin-bottom: 10px; /* change to second lind */
+}
+
+.topbar__links{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;     /* automatically switch lines */
+}
+
+.topbar__link{
+  display: inline-block;
+  padding: 8px 14px;
+  border: 2px solid #111;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #111;
+  font-weight: 700;
+}
+
+/* ===== Search + filters ===== */
+.searchbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.searchbar input{
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #111;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.searchbar button{
+  padding: 10px 14px;
+  border: 2px solid #111;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+}
+
+.filters{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+}
+
+.pill{
+  display: inline-block;
+  padding: 8px 14px;
+  border: 2px solid #ddd;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 700;
+  background: #f4f4f4;
+}
+
+.pill.is-active{
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.cards{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-link{
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card{
+  border: 3px solid #111;
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff;
+}
+
+.card__title{
+  margin: 0 0 8px 0;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.card__meta{
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.card.is-active{
+  background: #111;
+  color: #fff;
+}

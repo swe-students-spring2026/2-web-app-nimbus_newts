@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Home | Events@NYU{% endblock %}
+
+{% block content %}
+  <section class="page">
+    <div class="search">
+      <form class="searchbar" method="GET" action="{{ url_for('home') }}">
+        <input name="q" placeholder="Search" value="{{ q or '' }}">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="filters">
+      {% set cats = ["All","Sports","Academic","Arts","Today"] %}
+      {% for c in cats %}
+        <a class="pill {% if category == c %}is-active{% endif %}"
+          href="{{ url_for('home', q=q, category=c) }}">
+          {{ c }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <section class="cards">
+      {% for event in events %}
+        <a class="card-link" href="{{ url_for('event_detail', event_id=event.id) }}">
+          <article class="card {% if event.active %}is-active{% endif %}">
+            <h3 class="card__title">{{ event.title }}</h3>
+            <div class="card__meta">
+              <div>Category: {{ event.category }}</div>
+              <div>Location: {{ event.location }}</div>
+              <div>Date & Time: {{ event.datetime }}</div>
+            </div>
+          </article>
+        </a>
+      {% endfor %}
+    </section>
+  </section>
+{% endblock %}

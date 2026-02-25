@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Post Event | Events@NYU{% endblock %}
+
+{% block content %}
+<div class="pageheader">
+    <a href="/dashboard" class="backarrow">←</a>
+    <h1>Post Event</h1>
+</div>
+<form method="POST" action="/poster-post">
+  <label>Event Title</label>  
+  <input type="text" name="title" placeholder="Event Title">
+
+  <label>Description</label>
+  <textarea name="description" placeholder="Event Description"></textarea>
+
+  <label>Date</label>
+  <div class="datetimerow">
+    <input type="text" name="dd" placeholder="DD" maxlength="2">
+    <input type="text" name="mm" placeholder="MM" maxlength="2">
+    <input type="text" name="yyyy" placeholder="YYYY" maxlength="4">
+    <label>Time</label>
+    <input type="text" name="time" placeholder="HH:MM">
+  </div>
+
+  <label>Event Location</label>
+  <input type="text" name="location" placeholder="Event Location">
+
+  <label>Category</label>
+  <select name="category">
+    <option>Academic</option>
+    <option>Arts</option>
+    <option>Sports</option>
+  </select>
+
+  <button type="submit">Post Event</button>
+
+</form>
+
+{% endblock %}

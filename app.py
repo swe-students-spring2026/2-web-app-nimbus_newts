@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
@@ -41,5 +41,19 @@ def profile():
 def dashboard():
     return "Dashboard page (TODO)"
 
+@app.route("/poster-post", methods=["GET","POST"])
+def poster_post():
+    if request.method == "POST":
+        new_event = {
+            "id": str(len(EVENTS) + 1),
+            "title": request.form["title"],
+            "description": request.form["description"],
+            "location": request.form["location"],
+            "category": request.form["category"],
+            "datetime": request.form["mm"] + "/" + request.form["dd"] + " " + request.form["time"],
+        }
+        EVENTS.append(new_event)
+        return redirect("/dashboard")
+    return render_template("poster_post.html")
 if __name__ == "__main__":
     app.run(debug=True)

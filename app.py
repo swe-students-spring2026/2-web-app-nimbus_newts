@@ -1,8 +1,7 @@
 import os
 import datetime
 from urllib.parse import quote_plus
-from flask import Flask, render_template, request
-from flask_login import LoginManager, UserMixin, current_user, login_user , url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import (
     LoginManager,
     login_user,
@@ -79,19 +78,6 @@ def load_user(user_id):
         return None
     return User(doc) if doc else None
 
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-class User(UserMixin):
-    def __init__(self, id, username, role):
-        self.id = id
-        self.username = username
-        self.role = role
-@login_manager.user_loader
-def load_user(user_id):
-    return User(user_id, "Attendee", "Organizer")
-
 EVENTS = [
     {"id": "1", "title": "Career Fair @ Tandon", "category": "Academic", "location": "Bobst Library",
     "datetime": "02/28 6:30 PM", "description": "Meet employers..."},
@@ -122,33 +108,17 @@ def event_detail(event_id):
     if not event:
         return "Event not found", 404
     return render_template("event_details.html", event=event)
-@app.route("/login-as-organizer")
-def login_as_organizer():
-    # Create our dummy user
-    test_user = User(id="1", username="Ermuunn", role="Organizer")
-    
-    # Tell Flask-Login to remember this user
-    login_user(test_user)
-    
-    return "You are now logged in as an Organizer! <a href='/profile'>Go to Profile</a>"
-
-@app.route("/login-as-attendee")
-def login_as_attendee():
-    test_user = User(id="2", username="Student_Guest", role="Attendee")
-    login_user(test_user)
-    return "You are now logged in as an Attendee! <a href='/profile'>Go to Profile</a>"
 @app.route("/profile")
 @login_required
 def profile():
-    if not current_user.is_authenticated:
-        # If not, redirect them to home or show an error
-        return "You must be logged in to view this page.", 403
     events_to_show = []
-    if current_user == "Organizer":
+    if current_user.role == "organization" or current_user.role == "Organizer":
         events_to_show = EVENTS
     else:
         events_to_show = EVENTS[:2]
+        
     return render_template("profile.html", user=current_user, events=events_to_show)
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -176,7 +146,6 @@ def login():
         next_url = request.args.get("next") or url_for("home")
         return redirect(next_url)
     return render_template("login.html")
-
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -211,12 +180,10 @@ def signup():
         return redirect(url_for("home"))
     return render_template("signup.html")
 
-
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for("home"))
-
+    return redirect(url_for("login")) # Fixed: redirect to login instead of home (which requires login)
 
 @app.route("/poster-post", methods=["GET","POST"])
 @login_required

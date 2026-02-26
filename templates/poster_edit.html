@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Event | Events@NYU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='poster.css') }}">
+</head>
+<body>
+<div class="pageheader">
+    <a href="/dashboard" class="backarrow">←</a>
+    <h1>Edit Event</h1>
+</div>
+
+<form method="POST" action="/posteredit/{{ event.id }}">
+    <label>Event Title</label>
+    <input type="text" name="title" value="{{ event.title }}">
+
+    <label>Description</label>
+    <textarea name="description">{{ event.description }}</textarea>
+
+    <label>Date</label>
+    <div class="datetimerow">
+        <input type="text" name="dd" maxlength="2" value="{{ event.dd }}">
+        <input type="text" name="mm" maxlength="2" value="{{ event.mm }}">
+        <input type="text" name="yyyy" maxlength="4" value="{{ event.yyyy }}">
+        <label>Time</label>
+        <input type="text" name="time" value="{{ event.time }}">
+    </div>
+
+    <label>Event Location</label>
+        <input type="text" name="location" value="{{ event.location }}">
+
+    <label>Category</label>
+        <select name="category">
+            <option {% if event.category == "Academic" %}selected{% endif %}>Academic</option>
+            <option {% if event.category == "Sports" %}selected{% endif %}>Sports</option>
+            <option {% if event.category == "Arts" %}selected{% endif %}>Arts</option>
+        </select>
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="/dashboard" class="cancelbutton">Cancel</a>
+
+</body></html>

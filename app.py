@@ -55,5 +55,19 @@ def poster_post():
         EVENTS.append(new_event)
         return redirect("/dashboard")
     return render_template("poster_post.html")
+
+@app.route("/posteredit/<event_id>", methods=["GET","POST"])
+def poster_edit(event_id):
+    event = next((e for e in EVENTS if e["id"] == event_id), None)
+    if request.method == "POST":
+        event["title"]=request.form["title"]
+        event["description"]=request.form["description"]
+        event["location"]=request.form["location"]
+        event["category"]=request.form["category"]
+        event["datetime"]=request.form["mm"]+"/"+ request.form["dd"] + " " + request.form["time"]
+        return redirect("/dashboard")
+    
+    return render_template("poster_edit.html", event=event)
+
 if __name__ == "__main__":
     app.run(debug=True)

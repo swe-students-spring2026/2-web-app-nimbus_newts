@@ -13,7 +13,6 @@ from flask_login import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from pymongo import MongoClient
-import certifi
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,11 +33,7 @@ if _mongo_host and _mongo_user and _mongo_pass:
         MONGO_URI = f"mongodb://{_mongo_user}:{_encoded}@{_mongo_host}:27017/"
 else:
     MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-_tls_skip = os.getenv("MONGO_TLS_SKIP_VERIFY", "").strip().lower() in ("1", "true", "yes")
-if _tls_skip:
-    connection = MongoClient(MONGO_URI, tlsAllowInvalidCertificates=True)
-else:
-    connection = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+connection = MongoClient(MONGO_URI, tlsAllowInvalidCertificates=True)
 db = connection[MONGO_DBNAME]
 users_coll = db.users
 login_manager = LoginManager(app)

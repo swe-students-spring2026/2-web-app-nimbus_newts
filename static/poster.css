@@ -1,0 +1,101 @@
+/* ===== Global ===== */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
+
+
+.pageheader {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #111;
+    padding: 12px 14px;
+}
+
+.pageheader h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    margin: 0;
+}
+
+.backarrow {
+    font-size: 22px;
+    text-decoration: none;
+    color: #111;
+    font-weight: 900;
+}
+
+form {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+label {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #111;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: system-ui, -apple-system, Arial, sans-serif;
+}
+
+textarea {
+    height: 100px;
+    resize: none;
+}
+
+.datetimerow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.datetimerow input[name="dd"],
+.datetimerow input[name="mm"] {
+    width: 55px;
+}
+
+.datetimerow input[name="yyyy"] {
+    width: 75px;
+}
+
+.datetimerow input[name="time"] {
+    width: 80px;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 18px;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 22px;
+    font-weight: 900;
+    margin-top: 16px;
+    cursor: pointer;
+}
+
+.cancelbutton {
+    display: block;
+    margin-left: 14px;
+    margin-right: 14px;
+    width: calc(100% - 28px);
+    padding: 18px;
+    background: #111;
+    color: #fff;
+    border-radius: 14px;
+    font-size: 22px;
+    font-weight: 900;
+    margin-top: 8px;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}

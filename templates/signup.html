@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Sign Up | Events@NYU{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <h2 class="auth-page__heading">Sign Up</h2>
+
+  {% if get_flashed_messages() %}
+  <ul class="auth-flash">
+    {% for message in get_flashed_messages() %}
+    <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form class="auth-form" method="POST" action="{{ url_for('signup') }}">
+    <p class="auth-form__label">I am a..</p>
+    <div class="role-select">
+      <label class="role-btn">
+        <input type="radio" name="role" value="seeker" required>
+        <span class="role-btn__label">Student/Event Speaker</span>
+        <span class="role-btn__hint">Browse for events</span>
+      </label>
+      <label class="role-btn">
+        <input type="radio" name="role" value="organization">
+        <span class="role-btn__label">Organization</span>
+        <span class="role-btn__hint">Post your event</span>
+      </label>
+    </div>
+
+    <label class="auth-form__label" for="name">Name</label>
+    <input class="auth-form__input" id="name" name="name" type="text" autocomplete="name" required>
+
+    <label class="auth-form__label" for="username">Email/Username</label>
+    <input class="auth-form__input" id="username" name="username" type="text" autocomplete="username" required>
+
+    <label class="auth-form__label" for="password">Password</label>
+    <input class="auth-form__input" id="password" name="password" type="password" autocomplete="new-password" required>
+
+    <label class="auth-form__label" for="password2">Re-enter Password</label>
+    <input class="auth-form__input" id="password2" name="password2" type="password" autocomplete="new-password" required>
+
+    <button class="auth-form__submit" type="submit">Sign up</button>
+  </form>
+</section>
+{% endblock %}

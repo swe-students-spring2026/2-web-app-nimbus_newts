@@ -111,6 +111,11 @@ def event_detail(event_id):
 @app.route("/profile")
 @login_required
 def profile():
+    # 1. THE SAFETY NET: If they are anonymous, kick them to the login page
+    if not current_user.is_authenticated:
+        return redirect(url_for("login"))
+
+    # 2. Now we know 100% they are a real user, so it's safe to check the role
     events_to_show = []
     if current_user.role == "organization" or current_user.role == "Organizer":
         events_to_show = EVENTS
@@ -118,7 +123,6 @@ def profile():
         events_to_show = EVENTS[:2]
         
     return render_template("profile.html", user=current_user, events=events_to_show)
-
 @app.route("/dashboard")
 @login_required
 def dashboard():

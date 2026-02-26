@@ -1,0 +1,59 @@
+{% extends "base.html" %} {% block title %}My Profile - Events@NYU{% endblock %}
+{% block content %}
+<section class="profile-header" style="margin-bottom: 2rem">
+  <h1>Welcome, {{ user.name }}!</h1>
+  <p><strong>Username:</strong> @{{ user.username }}</p>
+  <p><strong>Account Type:</strong> {{ user.role | capitalize }}</p>
+</section>
+
+<hr style="margin-bottom: 2rem" />
+
+<section class="user-events">
+  {% if user.role == "organization" or user.role == "Organizer" %}
+  <h2>Manage Your Events</h2>
+  <p>As an Organization, you can edit or manage the events below.</p>
+  <a href="/poster-post">
+    <button style="margin-bottom: 1rem">+ Create New Event</button>
+  </a>
+  {% else %}
+  <h2>Your Upcoming Schedule</h2>
+  <p>Here are the events you are attending:</p>
+  {% endif %}
+
+  <div class="events-container">
+    {% if events %}
+    <ul style="list-style-type: none; padding: 0">
+      {% for event in events %}
+      <li
+        style="
+          margin-bottom: 20px;
+          border: 1px solid #ccc;
+          padding: 15px;
+          border-radius: 5px;
+        "
+      >
+        <h3>{{ event.title }}</h3>
+        <p><strong>When:</strong> {{ event.datetime }}</p>
+        <p><strong>Where:</strong> {{ event.location }}</p>
+        <p><strong>Category:</strong> {{ event.category }}</p>
+
+        {% if user.role == "organization" or user.role == "Organizer" %}
+        <br />
+        <a href="/posteredit/{{ event.id }}">
+          <button>Edit Event</button>
+        </a>
+        {% else %}
+        <br />
+        <a href="/events/{{ event.id }}">
+          <button>View Details</button>
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No events to show right now.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

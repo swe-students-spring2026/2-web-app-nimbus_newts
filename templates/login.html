@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Sign In | Events@NYU{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <h2 class="auth-page__heading">Sign In</h2>
+
+  {% if get_flashed_messages() %}
+  <ul class="auth-flash">
+    {% for message in get_flashed_messages() %}
+    <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+    <label class="auth-form__label" for="username">Email/Username</label>
+    <input class="auth-form__input" id="username" name="username" type="text" autocomplete="username" required>
+
+    <label class="auth-form__label" for="password">Password</label>
+    <input class="auth-form__input" id="password" name="password" type="password" autocomplete="current-password" required>
+
+    <p class="auth-form__link">
+      <a href="{{ url_for('signup') }}">No Account? Sign Up Here</a>
+    </p>
+
+    <button class="auth-form__submit" type="submit">Log In</button>
+  </form>
+</section>
+{% endblock %}

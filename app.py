@@ -69,7 +69,7 @@ class User(UserMixin):
             return None
         doc = {
             "username": username,
-            "password_hash": generate_password_hash(password),
+            "password_hash": generate_password_hash(password, method="pbkdf2:sha256"),
             "name": (name or "").strip(),
             "role": role,
             "created_at": datetime.datetime.utcnow(),
@@ -130,12 +130,21 @@ def event_detail(event_id):
 
     event = mongo_event_to_view(doc)
     return render_template("event_details.html", event=event)
-
 @app.route("/profile")
 @login_required
 def profile():
-    return "Profile page (TODO)"
+    # 1. THE SAFETY NET: If they are anonymous, kick them to the login page
+    if not current_user.is_authenticated:
+        return redirect(url_for("login"))
 
+    # 2. Now we know 100% they are a real user, so it's safe to check the role
+    events_to_show = []
+    if current_user.role == "organization" or current_user.role == "Organizer":
+        events_to_show = EVENTS
+    else:
+        events_to_show = EVENTS[:2]
+        
+    return render_template("profile.html", user=current_user, events=events_to_show)
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -163,7 +172,6 @@ def login():
         next_url = request.args.get("next") or url_for("home")
         return redirect(next_url)
     return render_template("login.html")
-
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -198,12 +206,10 @@ def signup():
         return redirect(url_for("home"))
     return render_template("signup.html")
 
-
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for("home"))
-
+    return redirect(url_for("login")) # Fixed: redirect to login instead of home (which requires login)
 
 @app.route("/poster-post", methods=["GET","POST"])
 @login_required

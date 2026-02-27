@@ -60,7 +60,7 @@ class User(UserMixin):
             return None
         doc = {
             "username": username,
-            "password_hash": generate_password_hash(password),
+            "password_hash": generate_password_hash(password, method="pbkdf2:sha256"),
             "name": (name or "").strip(),
             "role": role,
             "created_at": datetime.datetime.utcnow(),

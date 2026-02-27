@@ -35,6 +35,15 @@ else:
     MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 connection = MongoClient(MONGO_URI, tlsAllowInvalidCertificates=True)
 db = connection[MONGO_DBNAME]
+events_coll = db.events
+
+def mongo_event_to_view(doc):
+    """Convert Mongo event doc to what templates expect."""
+    doc = dict(doc)
+    doc["id"] = str(doc["_id"])
+    doc.pop("_id", None)
+    return doc
+
 users_coll = db.users
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -78,7 +87,7 @@ def load_user(user_id):
         return None
     return User(doc) if doc else None
 
-
+''' Dummy data for testing without MongoDB, uncomment if needed.
 EVENTS = [
     {"id": "1", "title": "Career Fair @ Tandon", "category": "Academic", "location": "Bobst Library",
     "datetime": "02/28 6:30 PM", "description": "Meet employers..."},
@@ -89,6 +98,7 @@ EVENTS = [
     {"id": "4", "title": "Campus Tour", "category": "Today", "location": "NYU Campus",
     "datetime": "Today 5:00 PM", "description": "Tour starts..."},
 ]
+'''
 
 @app.route("/")
 @login_required
@@ -96,20 +106,29 @@ def home():
     q = request.args.get("q", "").strip().lower()
     category = request.args.get("category", "All")
 
-    events = EVENTS
+    query = {}
     if q:
-        events = [e for e in events if q in e["title"].lower()]
+        query["title"] = {"$regex": q, "$options": "i"}  # case-insensitive search
     if category != "All":
-        events = [e for e in events if e["category"] == category]
+        query["category"] = category
+
+    docs = list(events_coll.find(query))
+    events = [mongo_event_to_view(d) for d in docs]
 
     return render_template("events_list.html", events=events, q=q, category=category)
 
 @app.route("/events/<event_id>")
 @login_required
 def event_detail(event_id):
-    event = next((e for e in EVENTS if e["id"] == event_id), None)
-    if not event:
+    try:
+        doc = events_coll.find_one({"_id": ObjectId(event_id)})
+    except Exception:
+        doc = None
+
+    if not doc:
         return "Event not found", 404
+
+    event = mongo_event_to_view(doc)
     return render_template("event_details.html", event=event)
 
 @app.route("/profile")
@@ -203,16 +222,33 @@ def poster_post():
     return render_template("poster_post.html")
 
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])
+@app.route("/posteredit/<event_id>", methods=["GET","POST"])
+@login_required
 def poster_edit(event_id):
-    event = next((e for e in EVENTS if e["id"] == event_id), None)
+    try:
+        oid = ObjectId(event_id)
+    except Exception:
+        return "Invalid event id", 400
+
     if request.method == "POST":
-        event["title"]=request.form["title"]
-        event["description"]=request.form["description"]
-        event["location"]=request.form["location"]
-        event["category"]=request.form["category"]
-        event["datetime"]=request.form["mm"]+"/"+ request.form["dd"] + " " + request.form["time"]
+        events_coll.update_one(
+            {"_id": oid},
+            {"$set": {
+                "title": request.form["title"].strip(),
+                "description": request.form["description"].strip(),
+                "location": request.form["location"].strip(),
+                "category": request.form["category"].strip(),
+                "datetime": f'{request.form["mm"]}/{request.form["dd"]} {request.form["time"]}',
+                "updated_at": datetime.datetime.utcnow(),
+            }}
+        )
         return redirect("/dashboard")
-    
+
+    doc = events_coll.find_one({"_id": oid})
+    if not doc:
+        return "Event not found", 404
+
+    event = mongo_event_to_view(doc)
     return render_template("poster_edit.html", event=event)
 
 if __name__ == "__main__":

@@ -3,9 +3,12 @@
 
 {% block content %}
     <h2>{{ event.title }}</h2>
+    <p><b>Organizer:</b> {{ event.organizer_name }}</p>
     <p><b>Category:</b> {{ event.category }}</p>
     <p><b>Location:</b> {{ event.location }}</p>
-    <p><b>Date & Time:</b> {{ event.datetime }}</p>
+    <p><b>Date:</b> {{ event.date }}</p>
+    <p><b>Time:</b> {{ event.time }}</p>
+    <p><b>Capacity:</b> {{ event.capacity or "Unlimited" }}</p>
     <hr>
     <p>{{ event.description }}</p>
 

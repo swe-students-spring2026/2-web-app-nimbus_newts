@@ -38,10 +38,20 @@ db = connection[MONGO_DBNAME]
 events_coll = db.events
 
 def mongo_event_to_view(doc):
-    """Convert Mongo event doc to what templates expect."""
     doc = dict(doc)
     doc["id"] = str(doc["_id"])
     doc.pop("_id", None)
+
+    org_name = None
+    organizer_id = doc.get("organizer_user_id")
+
+    if organizer_id:
+        org = orgs_coll.find_one({"user_id": organizer_id})
+        if org:
+            org_name = org.get("name")
+
+    doc["organizer_name"] = org_name or "Unknown Organizer"
+
     return doc
 
 users_coll = db.users
@@ -144,7 +154,12 @@ def profile():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return "Dashboard page (TODO)"
+    if current_user.role != "organization":
+        return redirect(url_for("home"))
+
+    docs = list(events_coll.find({"organizer_user_id": ObjectId(current_user.id)}))
+    events = [mongo_event_to_view(d) for d in docs]
+    return render_template("poster_dashboard.html", events=events)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -215,20 +230,53 @@ def logout():
     logout_user()
     return redirect(url_for("login")) # Fixed: redirect to login instead of home (which requires login)
 
-@app.route("/poster-post", methods=["GET","POST"])
+@app.route("/poster-post", methods=["GET", "POST"])
 @login_required
 def poster_post():
+    if current_user.role != "organization":
+        flash("Only organizations can post events.")
+        return redirect(url_for("home"))
+
     if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        location = (request.form.get("location") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        mm = (request.form.get("mm") or "").strip()
+        dd = (request.form.get("dd") or "").strip()
+        time = (request.form.get("time") or "").strip()
+        capacity = (request.form.get("capacity") or "").strip()
+
+        if not title or not location or not category or not mm or not dd or not time:
+            flash("Please fill out all required fields.")
+            return render_template("poster_post.html")
+
         new_event = {
-            "id": str(len(EVENTS) + 1),
-            "title": request.form["title"],
-            "description": request.form["description"],
-            "location": request.form["location"],
-            "category": request.form["category"],
-            "datetime": request.form["mm"] + "/" + request.form["dd"] + " " + request.form["time"],
+            "title": title,
+            "description": description,
+            "location": location,
+            "category": category,
+            "date": f"{mm}/{dd}",
+            "time": time,
+            "capacity": int(capacity) if capacity.isdigit() else None,
+
+            "organizer_user_id": ObjectId(current_user.id),
+
+            "rsvp_user_ids": [],
+
+            "created_at": datetime.datetime.utcnow(),
         }
-        EVENTS.append(new_event)
-        return redirect("/dashboard")
+
+        ins = events_coll.insert_one(new_event)
+
+        orgs_coll.update_one(
+            {"user_id": ObjectId(current_user.id)},
+            {"$addToSet": {"hosted_event_ids": ins.inserted_id}}
+        )
+
+        flash("Event posted!")
+        return redirect(url_for("dashboard"))
+
     return render_template("poster_post.html")
 
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])

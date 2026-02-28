@@ -144,11 +144,14 @@ def event_detail(event_id):
 @app.route("/profile")
 @login_required
 def profile():
-    if current_user.role == "organization":
-        docs = list(events_coll.find({"organizer_user_id": ObjectId(current_user.id)}))
-    else:
-        docs = list(events_coll.find().limit(2))
+    user_oid = ObjectId(current_user.id)
 
+    if current_user.role == "organization":
+        docs = list(events_coll.find({"organizer_user_id": user_oid}).sort("datetime", 1))
+        events_to_show = [mongo_event_to_view(d) for d in docs]
+        return render_template("profile.html", user=current_user, events=events_to_show)
+
+    docs = list(events_coll.find({"rsvp_user_ids": user_oid}).sort("datetime", 1))
     events_to_show = [mongo_event_to_view(d) for d in docs]
     return render_template("profile.html", user=current_user, events=events_to_show)
 @app.route("/dashboard")
@@ -308,6 +311,58 @@ def poster_edit(event_id):
 
     event = mongo_event_to_view(doc)
     return render_template("poster_edit.html", event=event)
+
+def event_rsvp_count(event_doc) -> int:
+    return len(event_doc.get("rsvp_user_ids", []))
+
+def user_has_rsvped(event_doc, user_oid: ObjectId) -> bool:
+    return user_oid in event_doc.get("rsvp_user_ids", [])
+
+@app.post("/events/<event_id>/rsvp")
+@login_required
+def rsvp_event(event_id):
+    try:
+        event_oid = ObjectId(event_id)
+    except Exception:
+        return "Invalid event id", 400
+
+    user_oid = ObjectId(current_user.id)
+
+    event_doc = events_coll.find_one(
+        {"_id": event_oid},
+        {"capacity": 1, "rsvp_user_ids": 1}
+    )
+    if not event_doc:
+        return "Event not found", 404
+
+    already = user_oid in event_doc.get("rsvp_user_ids", [])
+
+    if already:
+        # Un-RSVP: remove from event + user
+        events_coll.update_one({"_id": event_oid}, {"$pull": {"rsvp_user_ids": user_oid}})
+        users_coll.update_one(
+            {"_id": user_oid},
+            {"$pull": {"upcoming_rsvps": {"event_id": event_oid}}}
+        )
+        flash("RSVP removed.")
+        return redirect(url_for("event_detail", event_id=event_id))
+
+    # Capacity check (if capacity exists)
+    capacity = event_doc.get("capacity")
+    count_now = len(event_doc.get("rsvp_user_ids", []))
+    if capacity is not None and count_now >= capacity:
+        flash("Sorry, this event is full.")
+        return redirect(url_for("event_detail", event_id=event_id))
+
+    # RSVP: add to event + user
+    events_coll.update_one({"_id": event_oid}, {"$addToSet": {"rsvp_user_ids": user_oid}})
+    users_coll.update_one(
+        {"_id": user_oid},
+        {"$addToSet": {"upcoming_rsvps": {"event_id": event_oid, "status": "going"}}}
+    )
+
+    flash("RSVP confirmed!")
+    return redirect(url_for("event_detail", event_id=event_id))
 
 if __name__ == "__main__":
     app.run(debug=True)

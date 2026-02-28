@@ -45,6 +45,7 @@ def mongo_event_to_view(doc):
     return doc
 
 users_coll = db.users
+orgs_coll = db.organizations
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = None
@@ -133,17 +134,12 @@ def event_detail(event_id):
 @app.route("/profile")
 @login_required
 def profile():
-    # 1. THE SAFETY NET: If they are anonymous, kick them to the login page
-    if not current_user.is_authenticated:
-        return redirect(url_for("login"))
-
-    # 2. Now we know 100% they are a real user, so it's safe to check the role
-    events_to_show = []
-    if current_user.role == "organization" or current_user.role == "Organizer":
-        events_to_show = EVENTS
+    if current_user.role == "organization":
+        docs = list(events_coll.find({"organizer_user_id": ObjectId(current_user.id)}))
     else:
-        events_to_show = EVENTS[:2]
-        
+        docs = list(events_coll.find().limit(2))
+
+    events_to_show = [mongo_event_to_view(d) for d in docs]
     return render_template("profile.html", user=current_user, events=events_to_show)
 @app.route("/dashboard")
 @login_required
@@ -199,6 +195,14 @@ def signup():
             flash("Passwords do not match.")
             return render_template("signup.html")
         user = User.create(username, password, name, role)
+        if user and role == "organization":
+            orgs_coll.insert_one({
+                "user_id": ObjectId(user.id),
+                "name": name,
+                "email": username.lower().strip(),
+                "hosted_event_ids": [],
+                "created_at": datetime.datetime.utcnow(),
+            })
         if not user:
             flash("That email/username is already registered.")
             return render_template("signup.html")

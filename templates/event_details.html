@@ -3,9 +3,25 @@
 
 {% block content %}
     <h2>{{ event.title }}</h2>
+    <p><b>Organizer:</b> {{ event.organizer_name }}</p>
     <p><b>Category:</b> {{ event.category }}</p>
     <p><b>Location:</b> {{ event.location }}</p>
-    <p><b>Date & Time:</b> {{ event.datetime }}</p>
+    <p><b>Date:</b> {{ event.date }}</p>
+    <p><b>Time:</b> {{ event.time }}</p>
+    <p><b>Capacity:</b> {{ event.capacity or "Unlimited" }}</p>
+    <hr>
+
+<p><b>RSVPs:</b> {{ rsvp_count }}{% if capacity is not none %} / {{ capacity }}{% endif %}</p>
+
+{% if is_full and not has_rsvped %}
+  <p><b>This event is full.</b></p>
+{% else %}
+  <form method="POST" action="{{ url_for('rsvp_event', event_id=event.id) }}">
+    <button type="submit">
+      {% if has_rsvped %}Cancel RSVP{% else %}RSVP{% endif %}
+    </button>
+  </form>
+{% endif %}
     <hr>
     <p>{{ event.description }}</p>
 

@@ -22,8 +22,10 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
 
 .topbar__links{
   display: flex;
+  justify-content: space-between; 
+  align-items: center;
   gap: 10px;
-  flex-wrap: wrap;     /* automatically switch lines */
+  flex-wrap: wrap;
 }
 
 .topbar__link{
@@ -34,6 +36,20 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
   text-decoration: none;
   color: #111;
   font-weight: 700;
+}
+
+.topbar__left,
+.topbar__right{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap; 
+}
+
+.topbar__user{
+  font-weight: 800;
+  color: #111;
+  padding: 6px 0; 
 }
 
 /* ===== Search + filters ===== */

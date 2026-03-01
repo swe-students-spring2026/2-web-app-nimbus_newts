@@ -38,13 +38,24 @@ db = connection[MONGO_DBNAME]
 events_coll = db.events
 
 def mongo_event_to_view(doc):
-    """Convert Mongo event doc to what templates expect."""
     doc = dict(doc)
     doc["id"] = str(doc["_id"])
     doc.pop("_id", None)
+
+    org_name = None
+    organizer_id = doc.get("organizer_user_id")
+
+    if organizer_id:
+        org = orgs_coll.find_one({"user_id": organizer_id})
+        if org:
+            org_name = org.get("name")
+
+    doc["organizer_name"] = org_name or "Unknown Organizer"
+
     return doc
 
 users_coll = db.users
+orgs_coll = db.organizations
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = None
@@ -133,22 +144,25 @@ def event_detail(event_id):
 @app.route("/profile")
 @login_required
 def profile():
-    # 1. THE SAFETY NET: If they are anonymous, kick them to the login page
-    if not current_user.is_authenticated:
-        return redirect(url_for("login"))
+    user_oid = ObjectId(current_user.id)
 
-    # 2. Now we know 100% they are a real user, so it's safe to check the role
-    events_to_show = []
-    if current_user.role == "organization" or current_user.role == "Organizer":
-        events_to_show = EVENTS
-    else:
-        events_to_show = EVENTS[:2]
-        
+    if current_user.role == "organization":
+        docs = list(events_coll.find({"organizer_user_id": user_oid}).sort("datetime", 1))
+        events_to_show = [mongo_event_to_view(d) for d in docs]
+        return render_template("profile.html", user=current_user, events=events_to_show)
+
+    docs = list(events_coll.find({"rsvp_user_ids": user_oid}).sort("datetime", 1))
+    events_to_show = [mongo_event_to_view(d) for d in docs]
     return render_template("profile.html", user=current_user, events=events_to_show)
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return "Dashboard page (TODO)"
+    if current_user.role != "organization":
+        return redirect(url_for("home"))
+
+    docs = list(events_coll.find({"organizer_user_id": ObjectId(current_user.id)}))
+    events = [mongo_event_to_view(d) for d in docs]
+    return render_template("poster_dashboard.html", events=events)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -199,6 +213,14 @@ def signup():
             flash("Passwords do not match.")
             return render_template("signup.html")
         user = User.create(username, password, name, role)
+        if user and role == "organization":
+            orgs_coll.insert_one({
+                "user_id": ObjectId(user.id),
+                "name": name,
+                "email": username.lower().strip(),
+                "hosted_event_ids": [],
+                "created_at": datetime.datetime.utcnow(),
+            })
         if not user:
             flash("That email/username is already registered.")
             return render_template("signup.html")
@@ -211,20 +233,53 @@ def logout():
     logout_user()
     return redirect(url_for("login")) # Fixed: redirect to login instead of home (which requires login)
 
-@app.route("/poster-post", methods=["GET","POST"])
+@app.route("/poster-post", methods=["GET", "POST"])
 @login_required
 def poster_post():
+    if current_user.role != "organization":
+        flash("Only organizations can post events.")
+        return redirect(url_for("home"))
+
     if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        location = (request.form.get("location") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        mm = (request.form.get("mm") or "").strip()
+        dd = (request.form.get("dd") or "").strip()
+        time = (request.form.get("time") or "").strip()
+        capacity = (request.form.get("capacity") or "").strip()
+
+        if not title or not location or not category or not mm or not dd or not time:
+            flash("Please fill out all required fields.")
+            return render_template("poster_post.html")
+
         new_event = {
-            "id": str(len(EVENTS) + 1),
-            "title": request.form["title"],
-            "description": request.form["description"],
-            "location": request.form["location"],
-            "category": request.form["category"],
-            "datetime": request.form["mm"] + "/" + request.form["dd"] + " " + request.form["time"],
+            "title": title,
+            "description": description,
+            "location": location,
+            "category": category,
+            "date": f"{mm}/{dd}",
+            "time": time,
+            "capacity": int(capacity) if capacity.isdigit() else None,
+
+            "organizer_user_id": ObjectId(current_user.id),
+
+            "rsvp_user_ids": [],
+
+            "created_at": datetime.datetime.utcnow(),
         }
-        EVENTS.append(new_event)
-        return redirect("/dashboard")
+
+        ins = events_coll.insert_one(new_event)
+
+        orgs_coll.update_one(
+            {"user_id": ObjectId(current_user.id)},
+            {"$addToSet": {"hosted_event_ids": ins.inserted_id}}
+        )
+
+        flash("Event posted!")
+        return redirect(url_for("dashboard"))
+
     return render_template("poster_post.html")
 
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])
@@ -256,6 +311,58 @@ def poster_edit(event_id):
 
     event = mongo_event_to_view(doc)
     return render_template("poster_edit.html", event=event)
+
+def event_rsvp_count(event_doc) -> int:
+    return len(event_doc.get("rsvp_user_ids", []))
+
+def user_has_rsvped(event_doc, user_oid: ObjectId) -> bool:
+    return user_oid in event_doc.get("rsvp_user_ids", [])
+
+@app.post("/events/<event_id>/rsvp")
+@login_required
+def rsvp_event(event_id):
+    try:
+        event_oid = ObjectId(event_id)
+    except Exception:
+        return "Invalid event id", 400
+
+    user_oid = ObjectId(current_user.id)
+
+    event_doc = events_coll.find_one(
+        {"_id": event_oid},
+        {"capacity": 1, "rsvp_user_ids": 1}
+    )
+    if not event_doc:
+        return "Event not found", 404
+
+    already = user_oid in event_doc.get("rsvp_user_ids", [])
+
+    if already:
+        # Un-RSVP: remove from event + user
+        events_coll.update_one({"_id": event_oid}, {"$pull": {"rsvp_user_ids": user_oid}})
+        users_coll.update_one(
+            {"_id": user_oid},
+            {"$pull": {"upcoming_rsvps": {"event_id": event_oid}}}
+        )
+        flash("RSVP removed.")
+        return redirect(url_for("event_detail", event_id=event_id))
+
+    # Capacity check (if capacity exists)
+    capacity = event_doc.get("capacity")
+    count_now = len(event_doc.get("rsvp_user_ids", []))
+    if capacity is not None and count_now >= capacity:
+        flash("Sorry, this event is full.")
+        return redirect(url_for("event_detail", event_id=event_id))
+
+    # RSVP: add to event + user
+    events_coll.update_one({"_id": event_oid}, {"$addToSet": {"rsvp_user_ids": user_oid}})
+    users_coll.update_one(
+        {"_id": user_oid},
+        {"$addToSet": {"upcoming_rsvps": {"event_id": event_oid, "status": "going"}}}
+    )
+
+    flash("RSVP confirmed!")
+    return redirect(url_for("event_detail", event_id=event_id))
 
 if __name__ == "__main__":
     app.run(debug=True)

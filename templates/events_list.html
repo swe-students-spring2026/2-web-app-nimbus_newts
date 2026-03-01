@@ -26,9 +26,11 @@
           <article class="card {% if event.active %}is-active{% endif %}">
             <h3 class="card__title">{{ event.title }}</h3>
             <div class="card__meta">
+              <div> Organizer: {{ event.organizer_name}}</div>
               <div>Category: {{ event.category }}</div>
               <div>Location: {{ event.location }}</div>
-              <div>Date & Time: {{ event.datetime }}</div>
+              <div>Date: {{ event.date }}</div>
+              <div>Time: {{ event.time }}</div>
             </div>
           </article>
         </a>

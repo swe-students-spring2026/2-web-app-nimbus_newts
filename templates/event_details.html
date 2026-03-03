@@ -2,28 +2,127 @@
 {% block title %}{{ event.title }} | Events@NYU{% endblock %}
 
 {% block content %}
-    <h2>{{ event.title }}</h2>
-    <p><b>Organizer:</b> {{ event.organizer_name }}</p>
-    <p><b>Category:</b> {{ event.category }}</p>
-    <p><b>Location:</b> {{ event.location }}</p>
-    <p><b>Date:</b> {{ event.date }}</p>
-    <p><b>Time:</b> {{ event.time }}</p>
-    <p><b>Capacity:</b> {{ event.capacity or "Unlimited" }}</p>
-    <hr>
+  <p class="event-detail__back">
+    <a class="topbar__link" href="{{ url_for('home') }}">← Back</a>
+  </p>
 
-<p><b>RSVPs:</b> {{ rsvp_count }}{% if capacity is not none %} / {{ capacity }}{% endif %}</p>
+  {% if get_flashed_messages() %}
+    <ul class="auth-flash">
+      {% for message in get_flashed_messages() %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
-{% if is_full and not has_rsvped %}
-  <p><b>This event is full.</b></p>
-{% else %}
-  <form method="POST" action="{{ url_for('rsvp_event', event_id=event.id) }}">
-    <button type="submit">
-      {% if has_rsvped %}Cancel RSVP{% else %}RSVP{% endif %}
-    </button>
-  </form>
-{% endif %}
-    <hr>
-    <p>{{ event.description }}</p>
+  <article class="card event-detail">
+    <div class="event-detail__header">
+      <h2 class="card__title event-detail__title">{{ event.title }}</h2>
+      <span class="event-detail__status event-detail__status--{{ event_status }}">{{ event_status|capitalize }}</span>
+    </div>
+    <div class="card__meta event-detail__meta">
+      <p><b>Organizer:</b> {{ event.organizer_name }}</p>
+      <p><b>Category:</b> {{ event.category }}</p>
+      <p><b>Location:</b> {{ event.location }}</p>
+      <p><b>Date:</b> {{ event.date }}</p>
+      <p><b>Time:</b> {{ event.time }}</p>
+      <p><b>Capacity:</b> {{ event.capacity or "Unlimited" }}</p>
+    </div>
 
-    <p><a href="{{ url_for('home') }}">← Back</a></p>
+    <p class="event-detail__rsvp-count">
+      <b>RSVPs:</b> {{ rsvp_count }}{% if capacity is not none %} / {{ capacity }}{% endif %}
+    </p>
+
+    {% if is_organizer %}
+      <p class="event-detail__organizer-msg">You're the organizer. You can't RSVP to your own event.</p>
+    {% elif has_rsvped %}
+      <p class="event-detail__attending">You're attending!</p>
+    {% endif %}
+    {% if not is_organizer %}
+      {% if is_full and not has_rsvped %}
+        <div class="event-detail__form">
+          <button type="button" class="btn btn--rsvped" id="rsvp-full-btn">RSVP</button>
+        </div>
+      {% else %}
+        <form class="event-detail__form" method="POST" action="{{ url_for('rsvp_event', event_id=event.id) }}" id="rsvp-form">
+          <button type="button" class="btn {% if has_rsvped %}btn--rsvped{% endif %}" id="rsvp-btn" data-cancel="{{ 'true' if has_rsvped else 'false' }}">
+            {% if has_rsvped %}Cancel RSVP{% else %}RSVP{% endif %}
+          </button>
+        </form>
+      {% endif %}
+    {% endif %}
+
+    <hr class="event-detail__divider">
+    <div class="event-detail__description">{{ event.description }}</div>
+  </article>
+
+  {% if is_full and not has_rsvped %}
+  <div class="confirm-modal" id="event-full-modal" role="dialog" aria-labelledby="event-full-modal-title" aria-modal="true" hidden>
+    <div class="confirm-modal__backdrop" id="event-full-backdrop"></div>
+    <div class="confirm-modal__box">
+      <h3 class="confirm-modal__title" id="event-full-modal-title">Event full</h3>
+      <p class="confirm-modal__text">This event is full. Registration is closed.</p>
+      <div class="confirm-modal__actions">
+        <button type="button" class="btn" id="event-full-ok">OK</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if has_rsvped %}
+  <div class="confirm-modal" id="cancel-confirm-modal" role="dialog" aria-labelledby="confirm-modal-title" aria-modal="true" hidden>
+    <div class="confirm-modal__backdrop" id="confirm-modal-backdrop"></div>
+    <div class="confirm-modal__box">
+      <h3 class="confirm-modal__title" id="confirm-modal-title">Cancel your RSVP?</h3>
+      <p class="confirm-modal__text">Are you sure you want to cancel your RSVP for this event?</p>
+      <div class="confirm-modal__actions">
+        <button type="button" class="btn btn--rsvped" id="confirm-modal-keep">Keep my RSVP</button>
+        <button type="button" class="btn" id="confirm-modal-cancel">Yes, cancel my RSVP</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <script>
+    (function() {
+      var form = document.getElementById('rsvp-form');
+      var btn = document.getElementById('rsvp-btn');
+      var fullBtn = document.getElementById('rsvp-full-btn');
+      var fullModal = document.getElementById('event-full-modal');
+      var fullBackdrop = document.getElementById('event-full-backdrop');
+      var fullOk = document.getElementById('event-full-ok');
+      if (fullBtn && fullModal) {
+        fullBtn.addEventListener('click', function() {
+          fullModal.removeAttribute('hidden');
+        });
+        function closeFullModal() {
+          fullModal.setAttribute('hidden', '');
+        }
+        if (fullBackdrop) fullBackdrop.addEventListener('click', closeFullModal);
+        if (fullOk) fullOk.addEventListener('click', closeFullModal);
+      }
+      if (!form || !btn) return;
+      var modal = document.getElementById('cancel-confirm-modal');
+      var backdrop = document.getElementById('confirm-modal-backdrop');
+      var keepBtn = document.getElementById('confirm-modal-keep');
+      var cancelBtn = document.getElementById('confirm-modal-cancel');
+      var isCancel = (btn.getAttribute('data-cancel') || '').toLowerCase() === 'true';
+      function openModal() {
+        if (modal) modal.removeAttribute('hidden');
+      }
+      function closeModal() {
+        if (modal) modal.setAttribute('hidden', '');
+      }
+      btn.addEventListener('click', function() {
+        if (isCancel) {
+          openModal();
+        } else {
+          form.submit();
+        }
+      });
+      if (keepBtn) keepBtn.addEventListener('click', closeModal);
+      if (backdrop) backdrop.addEventListener('click', closeModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', function() {
+        closeModal();
+        form.submit();
+      });
+    })();
+  </script>
 {% endblock %}

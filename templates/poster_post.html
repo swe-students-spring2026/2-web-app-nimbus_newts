@@ -1,46 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Event | Events@NYU</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='poster.css') }}">
-</head>
-<body>
-<div class="pageheader">
-    <a href="/dashboard" class="backarrow">←</a>
-    <h1>Post Event</h1>
-</div>
-<form method="POST" action="/poster-post">
-  <label>Event Title</label>  
-  <input type="text" name="title" placeholder="Event Title">
+{% extends "base.html" %}
+{% block title %}Post Event | Events@NYU{% endblock %}
+{% block content %}
+  <p class="event-detail__back">
+    <a class="topbar__link" href="{{ url_for('dashboard') }}">← Dashboard</a>
+  </p>
 
-  <label>Description</label>
-  <textarea name="description" placeholder="Event Description"></textarea>
+  <section class="auth-page poster-page">
+    <h2 class="auth-page__heading">Post Event</h2>
 
-  <label>Date</label>
-  <div class="datetimerow">
-    <input type="text" name="dd" placeholder="DD" maxlength="2">
-    <input type="text" name="mm" placeholder="MM" maxlength="2">
-    <input type="text" name="yyyy" placeholder="YYYY" maxlength="4">
-    <label>Time</label>
-    <input type="text" name="time" placeholder="HH:MM">
-  </div>
+    {% if get_flashed_messages() %}
+      <ul class="auth-flash">
+        {% for message in get_flashed_messages() %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
-  <label>Event Location</label>
-  <input type="text" name="location" placeholder="Event Location">
-  <label>Capacity (optional)</label>
-  <input type="text" name="capacity" placeholder="Event Capacity">
+    <form class="auth-form poster-form" method="POST" action="{{ url_for('poster_post') }}">
+      <label class="auth-form__label" for="title">Event Title</label>
+      <input class="auth-form__input" id="title" name="title" type="text" placeholder="Event Title" required>
 
-  <label>Category</label>
-  <select name="category">
-    <option>Academic</option>
-    <option>Arts</option>
-    <option>Sports</option>
-  </select>
+      <label class="auth-form__label" for="description">Description</label>
+      <textarea class="auth-form__input poster-form__textarea" id="description" name="description" placeholder="Event description" rows="4"></textarea>
 
-  <button type="submit">Post Event</button>
+      <label class="auth-form__label" for="event-date">Date</label>
+      <input class="auth-form__input" id="event-date" name="date" type="date" required>
 
-</form>
+      <label class="auth-form__label" for="event-time">Time</label>
+      <input class="auth-form__input poster-form__time" id="event-time" name="time" type="time" required>
 
-</body></html>
+      <label class="auth-form__label" for="location">Event Location</label>
+      <input class="auth-form__input" id="location" name="location" type="text" placeholder="Event location" required>
+
+      <label class="auth-form__label" for="capacity">Capacity (optional)</label>
+      <input class="auth-form__input" id="capacity" name="capacity" type="number" min="1" placeholder="Leave blank for unlimited">
+
+      <label class="auth-form__label" for="category">Category</label>
+      <select class="auth-form__input" id="category" name="category" required>
+        <option value="Academic">Academic</option>
+        <option value="Arts">Arts</option>
+        <option value="Sports">Sports</option>
+      </select>
+
+      <button class="auth-form__submit" type="submit">Post Event</button>
+    </form>
+  </section>
+{% endblock %}

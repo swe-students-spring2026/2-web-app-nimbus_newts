@@ -1,7 +1,7 @@
 import os
 import datetime
 from urllib.parse import quote_plus
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_login import (
     LoginManager,
     login_user,
@@ -49,6 +49,13 @@ def mongo_event_to_view(doc):
         org = orgs_coll.find_one({"user_id": organizer_id})
         if org:
             org_name = org.get("name")
+        if not org_name:
+            try:
+                user_doc = users_coll.find_one({"_id": organizer_id})
+                if user_doc:
+                    org_name = user_doc.get("name") or user_doc.get("username", "")
+            except Exception:
+                pass
 
     doc["organizer_name"] = org_name or "Unknown Organizer"
 
@@ -124,6 +131,9 @@ def home():
         query["category"] = category
 
     docs = list(events_coll.find(query))
+    now = datetime.datetime.now()
+    docs = [d for d in docs if not d.get("event_datetime") or d["event_datetime"] >= now]
+    docs.sort(key=lambda d: (d.get("event_datetime") is None, d.get("event_datetime") or now))
     events = [mongo_event_to_view(d) for d in docs]
 
     return render_template("events_list.html", events=events, q=q, category=category)
@@ -140,7 +150,23 @@ def event_detail(event_id):
         return "Event not found", 404
 
     event = mongo_event_to_view(doc)
-    return render_template("event_details.html", event=event)
+    user_oid = ObjectId(current_user.id)
+    rsvp_count = event_rsvp_count(doc)
+    capacity = doc.get("capacity")
+    is_full = capacity is not None and rsvp_count >= capacity
+    has_rsvped = user_has_rsvped(doc, user_oid)
+    event_status = "closed" if is_full else "open"
+    is_organizer = doc.get("organizer_user_id") == user_oid
+    return render_template(
+        "event_details.html",
+        event=event,
+        rsvp_count=rsvp_count,
+        capacity=capacity,
+        is_full=is_full,
+        has_rsvped=has_rsvped,
+        event_status=event_status,
+        is_organizer=is_organizer,
+    )
 @app.route("/profile")
 @login_required
 def profile():
@@ -231,7 +257,8 @@ def signup():
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for("login")) # Fixed: redirect to login instead of home (which requires login)
+    session.pop("_flashes", None)
+    return redirect(url_for("login"))
 
 @app.route("/poster-post", methods=["GET", "POST"])
 @login_required
@@ -240,27 +267,49 @@ def poster_post():
         flash("Only organizations can post events.")
         return redirect(url_for("home"))
 
+    if request.method == "GET":
+        session.pop("_flashes", None)
+
     if request.method == "POST":
         title = (request.form.get("title") or "").strip()
         description = (request.form.get("description") or "").strip()
         location = (request.form.get("location") or "").strip()
         category = (request.form.get("category") or "").strip()
-        mm = (request.form.get("mm") or "").strip()
-        dd = (request.form.get("dd") or "").strip()
-        time = (request.form.get("time") or "").strip()
+        date_str = (request.form.get("date") or "").strip()
+        time_str = (request.form.get("time") or "").strip()
         capacity = (request.form.get("capacity") or "").strip()
 
-        if not title or not location or not category or not mm or not dd or not time:
+        if not title or not location or not category or not date_str or not time_str:
             flash("Please fill out all required fields.")
             return render_template("poster_post.html")
+
+        try:
+            year, month, day = date_str.split("-")
+            y, m, d = int(year), int(month), int(day)
+            date_display = f"{month}/{day}"
+        except (ValueError, TypeError):
+            flash("Please enter a valid date.")
+            return render_template("poster_post.html")
+
+        try:
+            time_parts = time_str.strip().split(":")
+            hour = int(time_parts[0])
+            minute = int(time_parts[1][:2]) if len(time_parts) > 1 else 0
+            event_datetime = datetime.datetime(y, m, d, hour, minute)
+        except (ValueError, TypeError, IndexError):
+            flash("Please enter a valid time.")
+            return render_template("poster_post.html")
+
+        time_display = _format_time_12h(time_str) or time_str
 
         new_event = {
             "title": title,
             "description": description,
             "location": location,
             "category": category,
-            "date": f"{mm}/{dd}",
-            "time": time,
+            "date": date_display,
+            "time": time_display,
+            "event_datetime": event_datetime,
             "capacity": int(capacity) if capacity.isdigit() else None,
 
             "organizer_user_id": ObjectId(current_user.id),
@@ -277,10 +326,21 @@ def poster_post():
             {"$addToSet": {"hosted_event_ids": ins.inserted_id}}
         )
 
-        flash("Event posted!")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("poster_post_success", event_id=str(ins.inserted_id)))
 
     return render_template("poster_post.html")
+
+
+@app.route("/poster-post/success/<event_id>")
+@login_required
+def poster_post_success(event_id):
+    try:
+        doc = events_coll.find_one({"_id": ObjectId(event_id)})
+    except Exception:
+        doc = None
+    event_title = doc.get("title", "Your event") if doc else "Your event"
+    return render_template("poster_post_success.html", event_title=event_title, event_id=event_id)
+
 
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])
@@ -312,6 +372,25 @@ def poster_edit(event_id):
     event = mongo_event_to_view(doc)
     return render_template("poster_edit.html", event=event)
 
+def _format_time_12h(time_str: str):
+    """Convert HH:MM (24h) to 'h:MM AM/PM'."""
+    if not time_str or ":" not in time_str:
+        return time_str
+    parts = time_str.strip().split(":")
+    try:
+        h = int(parts[0])
+        m = parts[1][:2] if len(parts) > 1 else "00"
+        if h == 0:
+            return f"12:{m} AM"
+        if h < 12:
+            return f"{h}:{m} AM"
+        if h == 12:
+            return f"12:{m} PM"
+        return f"{h - 12}:{m} PM"
+    except (ValueError, IndexError):
+        return time_str
+
+
 def event_rsvp_count(event_doc) -> int:
     return len(event_doc.get("rsvp_user_ids", []))
 
@@ -330,10 +409,14 @@ def rsvp_event(event_id):
 
     event_doc = events_coll.find_one(
         {"_id": event_oid},
-        {"capacity": 1, "rsvp_user_ids": 1}
+        {"capacity": 1, "rsvp_user_ids": 1, "organizer_user_id": 1}
     )
     if not event_doc:
         return "Event not found", 404
+
+    if event_doc.get("organizer_user_id") == user_oid:
+        flash("You can't RSVP to your own event.")
+        return redirect(url_for("event_detail", event_id=event_id))
 
     already = user_oid in event_doc.get("rsvp_user_ids", [])
 

@@ -18,7 +18,7 @@
     <div class="role-select">
       <label class="role-btn">
         <input type="radio" name="role" value="seeker" required>
-        <span class="role-btn__label">Student/Event Speaker</span>
+        <span class="role-btn__label">Student/Event Seeker</span>
         <span class="role-btn__hint">Browse for events</span>
       </label>
       <label class="role-btn">
@@ -28,8 +28,27 @@
       </label>
     </div>
 
-    <label class="auth-form__label" for="name">Name</label>
-    <input class="auth-form__input" id="name" name="name" type="text" autocomplete="name" required>
+    <label class="auth-form__label" for="name" id="name-label">Name</label>
+    <input class="auth-form__input" id="name" name="name" type="text" autocomplete="name" required placeholder="Your name">
+    <script>
+      (function() {
+        var nameLabel = document.getElementById('name-label');
+        var nameInput = document.getElementById('name');
+        var roleRadios = document.querySelectorAll('input[name="role"]');
+        function updateNameLabel() {
+          var role = document.querySelector('input[name="role"]:checked');
+          if (role && role.value === 'organization') {
+            nameLabel.textContent = 'Organization name';
+            if (nameInput) nameInput.placeholder = 'Your organization name';
+          } else {
+            nameLabel.textContent = 'Name';
+            if (nameInput) nameInput.placeholder = 'Your name';
+          }
+        }
+        roleRadios.forEach(function(r) { r.addEventListener('change', updateNameLabel); });
+        updateNameLabel();
+      })();
+    </script>
 
     <label class="auth-form__label" for="username">Email/Username</label>
     <input class="auth-form__input" id="username" name="username" type="text" autocomplete="username" required>

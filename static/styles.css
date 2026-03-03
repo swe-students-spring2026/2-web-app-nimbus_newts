@@ -140,6 +140,74 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
   margin: 0 auto;
 }
 
+/* profile page */
+.profile-header {
+  margin-bottom: 20px;
+}
+
+.profile-header__title {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.profile-header__meta {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.profile-divider {
+  margin: 0 0 20px 0;
+  border: none;
+  border-top: 2px solid #111;
+}
+
+.profile-section__title {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.profile-section__intro {
+  margin: 0 0 14px 0;
+  line-height: 1.4;
+}
+
+.profile-section__actions {
+  margin: 0 0 16px 0;
+}
+
+.profile-event-card__btn {
+  margin-top: 12px;
+  text-decoration: none;
+}
+
+.profile-empty {
+  margin: 0;
+  padding: 18px;
+  border: 3px solid #111;
+  border-radius: 22px;
+  background: #fff;
+}
+
+/* Poster post success (confirmation) */
+.poster-success__title {
+  margin-bottom: 12px;
+}
+
+.poster-success__message {
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.poster-success__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
 /* auth pages (sign in / sign up) */
 .auth-page{
   padding: 10px 0;
@@ -246,4 +314,169 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
   font-size: 14px;
   opacity: 0.9;
   margin-top: 4px;
+}
+
+/* post form */
+.poster-page,
+.poster-page .auth-page__heading,
+.poster-page .auth-form__label,
+.poster-page .auth-form__input,
+.poster-page .auth-form__submit,
+.poster-page select.auth-form__input {
+  font-family: system-ui, -apple-system, Arial, sans-serif;
+  font-size: 16px;
+}
+.poster-page .auth-page__heading {
+  font-size: 18px;
+  font-weight: 700;
+}
+.poster-page .auth-form__label {
+  font-weight: 700;
+}
+.poster-page .auth-form__submit {
+  font-size: 16px;
+}
+.poster-form__textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.poster-form__time {
+  max-width: 10em;
+}
+
+/* event detail page */
+.event-detail__back {
+  margin: 0 0 14px 0;
+}
+
+.event-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.event-detail__title {
+  margin: 0;
+}
+
+.event-detail__status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.event-detail__status--open {
+  background: #e0f0e0;
+  border: 2px solid #2a7a2a;
+  color: #1a5a1a;
+}
+
+.event-detail__status--closed {
+  background: #e8e8e8;
+  border: 2px solid #666;
+  color: #444;
+}
+
+.event-detail__meta p,
+.event-detail__rsvp-count,
+.event-detail__full {
+  margin: 0 0 8px 0;
+}
+
+.event-detail__divider {
+  margin: 16px 0;
+  border: none;
+  border-top: 2px solid #111;
+}
+
+.event-detail__description {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.event-detail__attending {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+}
+
+.event-detail__organizer-msg {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+}
+
+.event-detail__form {
+  margin: 14px 0 0 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 2px solid #111;
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn--rsvped {
+  background: #888;
+  border-color: #666;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* confirm cancel rsvp */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.confirm-modal[hidden] {
+  display: none;
+}
+.confirm-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+.confirm-modal__box {
+  position: relative;
+  background: #fff;
+  border: 3px solid #111;
+  border-radius: 22px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+}
+.confirm-modal__title {
+  margin: 0 0 10px 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+.confirm-modal__text {
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+.confirm-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.confirm-modal__actions .btn {
+  flex: 1;
+  min-width: 120px;
 }

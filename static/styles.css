@@ -480,3 +480,41 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
   flex: 1;
   min-width: 120px;
 }
+
+.card_buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.editbutton, .deletebutton {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+    background: #111;
+    color: #fff;
+    border: 2px solid #111;
+}
+
+.dashboardplus {
+    display: inline-block;
+    padding: 8px 14px;
+    background: #111;
+    color: #fff;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+

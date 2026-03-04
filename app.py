@@ -121,6 +121,8 @@ EVENTS = [
 @app.route("/")
 @login_required
 def home():
+    if current_user.role == "organization" :
+        return redirect(url_for("dashboard"))
     q = request.args.get("q", "").strip().lower()
     category = request.args.get("category", "All")
 
@@ -185,8 +187,10 @@ def profile():
 def dashboard():
     if current_user.role != "organization":
         return redirect(url_for("home"))
-
+    now = datetime.datetime.now()
     docs = list(events_coll.find({"organizer_user_id": ObjectId(current_user.id)}))
+    docs = [d for d in docs if not d.get("event_datetime") or d["event_datetime"] >= now]
+    docs.sort(key=lambda d: (d.get("event_datetime") is None, d.get("event_datetime") or now))
     events = [mongo_event_to_view(d) for d in docs]
     return render_template("poster_dashboard.html", events=events)
 
@@ -209,7 +213,9 @@ def login():
             flash("Invalid username or password.")
             return render_template("login.html")
         login_user(user)
-        next_url = request.args.get("next") or url_for("home")
+        next_url = request.args.get("next")
+        if not next_url:
+            next_url = url_for("dashboard") if user.role == "organization" else url_for("home")
         return redirect(next_url)
     return render_template("login.html")
 
@@ -251,6 +257,8 @@ def signup():
             flash("That email/username is already registered.")
             return render_template("signup.html")
         login_user(user)
+        if role == "organization":
+            return redirect(url_for("dashboard"))
         return redirect(url_for("home"))
     return render_template("signup.html")
 
@@ -343,7 +351,6 @@ def poster_post_success(event_id):
 
 
 @app.route("/posteredit/<event_id>", methods=["GET","POST"])
-@app.route("/posteredit/<event_id>", methods=["GET","POST"])
 @login_required
 def poster_edit(event_id):
     try:
@@ -352,24 +359,61 @@ def poster_edit(event_id):
         return "Invalid event id", 400
 
     if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        location = (request.form.get("location") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        date_str = (request.form.get("date") or "").strip()
+        time_str = (request.form.get("time") or "").strip()
+
+        if not title or not location or not category or not date_str or not time_str:
+            flash("Please fill out all required fields.")
+            return redirect(url_for("poster_edit", event_id=event_id))
+
+        try:
+            year, month, day = date_str.split("-")
+            y, m, d = int(year), int(month), int(day)
+            date_display = f"{month}/{day}"
+        except (ValueError, TypeError):
+            flash("Please enter a valid date.")
+            return redirect(url_for("poster_edit", event_id=event_id))
+
+        try:
+            time_parts = time_str.strip().split(":")
+            hour = int(time_parts[0])
+            minute = int(time_parts[1][:2]) if len(time_parts) > 1 else 0
+            event_datetime = datetime.datetime(y, m, d, hour, minute)
+        except (ValueError, TypeError, IndexError):
+            flash("Please enter a valid time.")
+            return redirect(url_for("poster_edit", event_id=event_id))
+
+        time_display = _format_time_12h(time_str) or time_str
         events_coll.update_one(
             {"_id": oid},
             {"$set": {
-                "title": request.form["title"].strip(),
-                "description": request.form["description"].strip(),
-                "location": request.form["location"].strip(),
-                "category": request.form["category"].strip(),
-                "datetime": f'{request.form["mm"]}/{request.form["dd"]} {request.form["time"]}',
+                "title": title,
+                "description": description,
+                "location": location,
+                "category": category,
+                "date": date_display,
+                "time": time_display,
+                "event_datetime": event_datetime,
                 "updated_at": datetime.datetime.utcnow(),
             }}
         )
-        return redirect("/dashboard")
+        return redirect(url_for("dashboard"))
 
     doc = events_coll.find_one({"_id": oid})
     if not doc:
         return "Event not found", 404
 
     event = mongo_event_to_view(doc)
+    if doc.get("event_datetime"):
+        event["date_input"] = doc["event_datetime"].strftime("%Y-%m-%d")
+        event["time_input"] = doc["event_datetime"].strftime("%H:%M")
+    else:
+        event["date_input"] = ""
+        event["time_input"] = ""
     return render_template("poster_edit.html", event=event)
 
 def _format_time_12h(time_str: str):
@@ -446,6 +490,18 @@ def rsvp_event(event_id):
 
     flash("RSVP confirmed!")
     return redirect(url_for("event_detail", event_id=event_id))
+
+@app.route("/posterdelete/<event_id>")
+@login_required
+def poster_delete(event_id):
+    try:
+        oid = ObjectId(event_id)
+    except Exception:
+        return "Invalid event id", 400
+    
+    events_coll.delete_one({"_id": oid})
+    flash("Event deleted.")
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     app.run(debug=True)

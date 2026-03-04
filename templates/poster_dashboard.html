@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Events@NYU{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-header">
+    <h2>My Active Events</h2>
+    <a href="{{ url_for('poster_post') }}" class="dashboardplus">+ Post Event</a>
+</div>
+<section class="cards">
+    {% for event in events %}
+        <article class="card {% if event.active %}is-active{% endif %}">
+            <h3 class="card__title">{{ event.title }}</h3>
+            <div class="card__meta">
+                <div>Category: {{ event.category }}</div>
+                <div>Location: {{ event.location }}</div>
+                <div>Date: {{ event.date }}</div>
+                <div>Time: {{ event.time }}</div>
+            </div>
+            <div class="card_buttons">
+                <a href="{{ url_for('poster_edit', event_id=event.id) }}" class="editbutton">Edit</a>
+                <a href="{{ url_for('poster_delete', event_id=event.id) }}" class="deletebutton"
+                   onclick="return confirm('Are you sure you want to delete {{ event.title }}?')">Delete</a>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+
+
+{% endblock %}

@@ -481,7 +481,6 @@ def rsvp_event(event_id):
     already = user_oid in event_doc.get("rsvp_user_ids", [])
 
     if already:
-        # Un-RSVP: remove from event + user
         events_coll.update_one({"_id": event_oid}, {"$pull": {"rsvp_user_ids": user_oid}})
         users_coll.update_one(
             {"_id": user_oid},
@@ -490,14 +489,12 @@ def rsvp_event(event_id):
         flash("RSVP removed.")
         return redirect(url_for("event_detail", event_id=event_id))
 
-    # Capacity check (if capacity exists)
     capacity = event_doc.get("capacity")
     count_now = len(event_doc.get("rsvp_user_ids", []))
     if capacity is not None and count_now >= capacity:
         flash("Sorry, this event is full.")
         return redirect(url_for("event_detail", event_id=event_id))
 
-    # RSVP: add to event + user
     events_coll.update_one({"_id": event_oid}, {"$addToSet": {"rsvp_user_ids": user_oid}})
     users_coll.update_one(
         {"_id": user_oid},
@@ -550,6 +547,31 @@ def poster_delete(event_id):
     events_coll.delete_one({"_id": oid})
     flash("Event deleted.")
     return redirect(url_for("dashboard"))
+
+def get_upcoming_rsvp_notifications(user_oid: ObjectId, within_hours: int = 24, limit: int = 3):
+    now = datetime.datetime.now()
+    cutoff = now + datetime.timedelta(hours=within_hours)
+
+    docs = list(events_coll.find({
+        "rsvp_user_ids": user_oid,
+        "event_datetime": {"$gte": now, "$lte": cutoff}
+    }).sort("event_datetime", 1).limit(limit))
+
+    return [mongo_event_to_view(d) for d in docs]
+
+@app.context_processor
+def inject_notifications():
+    if not current_user.is_authenticated:
+        return {}
+    if current_user.role != "seeker":
+        return {}
+
+    try:
+        notes = get_upcoming_rsvp_notifications(ObjectId(current_user.id), within_hours=24, limit=3)
+    except Exception:
+        notes = []
+
+    return {"upcoming_notifications": notes}
 
 if __name__ == "__main__":
     app.run(debug=True)

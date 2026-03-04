@@ -8,12 +8,21 @@ A single place for the NYU community to post, discover, and RSVP to campus event
 
 ## User stories
 
-See instructions. Delete this line and place a link to the user stories here.
-
+[User stories](https://github.com/swe-students-spring2026/software-engineering-spring-2026-2-web-app-web-app-exercise/actions)
 ## Steps necessary to run the software
 
-See instructions. Delete this line and place instructions to download, configure, and run the software here.
+to make virtual environment:
+python3 -m venv .venv
 
+to activate virtual environment:
+source .venv/bin/activate
+----- 
+to install requirements for running the app:
+pip install -r requirements.txt
+----- 
+to run the app locally:
+python app.py
 ## Task boards
 
-See instructions. Delete this line and place a link to the task boards here.
+[Sprint 1](https://github.com/orgs/swe-students-spring2026/projects/23)
+[Sprint 2](https://github.com/orgs/swe-students-spring2026/projects/58)

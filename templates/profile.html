@@ -74,5 +74,31 @@
         {% endif %}
     </div>
     {% endif %}
+
+    {% if user.role == "seeker" %}
+      <hr class="profile-divider" />
+
+      <h2 class="profile-section__title">Saved Events</h2>
+      <p class="profile-section__intro">Events you saved to view later:</p>
+
+      <div class="cards">
+        {% if saved_events %}
+          {% for event in saved_events %}
+            <article class="card profile-event-card">
+              <h3 class="card__title">{{ event.title }}</h3>
+              <div class="card__meta">
+                <p><strong>Organizer:</strong> {{ event.organizer_name }}</p>
+                <p><strong>Where:</strong> {{ event.location }}</p>
+                <p><strong>Category:</strong> {{ event.category }}</p>
+                <p><strong>When:</strong> {{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</p>
+              </div>
+              <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn profile-event-card__btn">View Details</a>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p class="profile-empty">No saved events yet.</p>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
 {% endblock %}

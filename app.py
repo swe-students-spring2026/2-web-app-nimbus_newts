@@ -157,6 +157,8 @@ def event_detail(event_id):
     capacity = doc.get("capacity")
     is_full = capacity is not None and rsvp_count >= capacity
     has_rsvped = user_has_rsvped(doc, user_oid)
+    user_doc = users_coll.find_one({"_id": user_oid}, {"saved_event_ids": 1})
+    has_saved = (ObjectId(event_id) in (user_doc.get("saved_event_ids", []) if user_doc else []))
     event_status = "closed" if is_full else "open"
     is_organizer = doc.get("organizer_user_id") == user_oid
     return render_template(
@@ -166,6 +168,7 @@ def event_detail(event_id):
         capacity=capacity,
         is_full=is_full,
         has_rsvped=has_rsvped,
+        has_saved=has_saved,
         event_status=event_status,
         is_organizer=is_organizer,
     )
@@ -187,7 +190,14 @@ def profile():
 
     docs = list(events_coll.find({"rsvp_user_ids": user_oid}).sort("datetime", 1))
     events_to_show = [mongo_event_to_view(d) for d in docs]
-    return render_template("profile.html", user=current_user, events=events_to_show)
+
+    user_doc = users_coll.find_one({"_id": user_oid}, {"saved_event_ids": 1})
+    saved_ids = (user_doc or {}).get("saved_event_ids", [])
+
+    saved_docs = list(events_coll.find({"_id": {"$in": saved_ids}})) if saved_ids else []
+    saved_events = [mongo_event_to_view(d) for d in saved_docs]
+
+    return render_template("profile.html", user=current_user, events=events_to_show, saved_events=saved_events)
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -495,6 +505,38 @@ def rsvp_event(event_id):
     )
 
     flash("RSVP confirmed!")
+    return redirect(url_for("event_detail", event_id=event_id))
+
+# for saved events feature
+def user_has_saved(user_doc, event_oid: ObjectId) -> bool:
+    return event_oid in (user_doc.get("saved_event_ids") or [])
+
+@app.post("/events/<event_id>/save")
+@login_required
+def save_event(event_id):
+    try:
+        event_oid = ObjectId(event_id)
+    except Exception:
+        return "Invalid event id", 400
+
+    user_oid = ObjectId(current_user.id)
+
+    event_doc = events_coll.find_one({"_id": event_oid}, {"_id": 1})
+    if not event_doc:
+        return "Event not found", 404
+
+    user_doc = users_coll.find_one({"_id": user_oid}, {"saved_event_ids": 1})
+    saved_ids = user_doc.get("saved_event_ids", []) if user_doc else []
+
+    already_saved = event_oid in saved_ids
+
+    if already_saved:
+        users_coll.update_one({"_id": user_oid}, {"$pull": {"saved_event_ids": event_oid}})
+        flash("Removed from saved events.")
+    else:
+        users_coll.update_one({"_id": user_oid}, {"$addToSet": {"saved_event_ids": event_oid}})
+        flash("Saved!")
+
     return redirect(url_for("event_detail", event_id=event_id))
 
 @app.route("/posterdelete/<event_id>")

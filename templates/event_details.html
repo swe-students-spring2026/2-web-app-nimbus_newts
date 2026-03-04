@@ -38,17 +38,24 @@
       <p class="event-detail__attending">You're attending!</p>
     {% endif %}
     {% if not is_organizer %}
-      {% if is_full and not has_rsvped %}
-        <div class="event-detail__form">
-          <button type="button" class="btn btn--rsvped" id="rsvp-full-btn">RSVP</button>
-        </div>
-      {% else %}
-        <form class="event-detail__form" method="POST" action="{{ url_for('rsvp_event', event_id=event.id) }}" id="rsvp-form">
-          <button type="button" class="btn {% if has_rsvped %}btn--rsvped{% endif %}" id="rsvp-btn" data-cancel="{{ 'true' if has_rsvped else 'false' }}">
-            {% if has_rsvped %}Cancel RSVP{% else %}RSVP{% endif %}
+      <div class="event-detail__actions">
+        {% if is_full and not has_rsvped %}
+          <div class="event-detail__form">
+            <button type="button" class="btn btn--rsvped" id="rsvp-full-btn">RSVP</button>
+          </div>
+        {% else %}
+          <form class="event-detail__form" method="POST" action="{{ url_for('rsvp_event', event_id=event.id) }}" id="rsvp-form">
+            <button type="button" class="btn {% if has_rsvped %}btn--rsvped{% endif %}" id="rsvp-btn" data-cancel="{{ 'true' if has_rsvped else 'false' }}">
+              {% if has_rsvped %}Cancel RSVP{% else %}RSVP{% endif %}
+            </button>
+          </form>
+        {% endif %}
+        <form method="POST" action="{{ url_for('save_event', event_id=event.id) }}" class="event-detail__form">
+          <button type="submit" class="btn {% if has_saved %}btn--rsvped{% endif %}">
+            {% if has_saved %}Unsave{% else %}Save{% endif %}
           </button>
         </form>
-      {% endif %}
+      </div>
     {% endif %}
 
     <hr class="event-detail__divider">

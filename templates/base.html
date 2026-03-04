@@ -36,6 +36,17 @@
     </div>
   {% endif %}
 </nav>
+{% if upcoming_notifications and upcoming_notifications|length > 0 %}
+  <section class="notif-bar">
+    <strong>Reminder:</strong>
+    You have {{ upcoming_notifications|length }} RSVP{% if upcoming_notifications|length != 1 %}s{% endif %} in the next 24 hours:
+    {% for e in upcoming_notifications %}
+      <a class="notif-link" href="{{ url_for('event_detail', event_id=e.id) }}">
+        {{ e.title }}{% if e.time %} ({{ e.time }}){% endif %}
+      </a>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+  </section>
+{% endif %}
     </header>
 
     <main class="container">

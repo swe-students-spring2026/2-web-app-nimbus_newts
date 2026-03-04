@@ -175,9 +175,15 @@ def profile():
     user_oid = ObjectId(current_user.id)
 
     if current_user.role == "organization":
-        docs = list(events_coll.find({"organizer_user_id": user_oid}).sort("datetime", 1))
-        events_to_show = [mongo_event_to_view(d) for d in docs]
-        return render_template("profile.html", user=current_user, events=events_to_show)
+        now = datetime.datetime.now()
+        all_docs = list(events_coll.find({"organizer_user_id": user_oid}))
+        active_docs = [d for d in all_docs if not d.get("event_datetime") or d["event_datetime"] >= now]
+        active_docs.sort(key=lambda d: (d.get("event_datetime") is None, d.get("event_datetime") or now))
+        past_docs = [d for d in all_docs if d.get("event_datetime") and d["event_datetime"] < now]
+        past_docs.sort(key=lambda d: d["event_datetime"], reverse=True)
+        events = [mongo_event_to_view(d) for d in active_docs]
+        past_events = [mongo_event_to_view(d) for d in past_docs]
+        return render_template("profile.html", user=current_user, events=events, past_events=past_events)
 
     docs = list(events_coll.find({"rsvp_user_ids": user_oid}).sort("datetime", 1))
     events_to_show = [mongo_event_to_view(d) for d in docs]

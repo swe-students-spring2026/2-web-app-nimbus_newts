@@ -518,3 +518,14 @@ body { margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif; }
     cursor: pointer;
 }
 
+.event-detail__actions{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.event-detail__actions .event-detail__form{
+  margin: 0;
+}

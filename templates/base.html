@@ -14,9 +14,13 @@
         <nav class="topbar__links">
   {% if current_user.is_authenticated %}
     <div class="topbar__left">
-      <a class="topbar__link" href="{{ url_for('home') }}">Home</a>
-      <a class="topbar__link" href="{{ url_for('profile') }}">Profile</a>
-      <a class="topbar__link" href="{{ url_for('dashboard') }}">Dashboard</a>
+      {% if current_user.role == "organization" %}
+        <a class="topbar__link" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="topbar__link" href="{{ url_for('profile') }}">Profile</a>
+      {% else %}
+        <a class="topbar__link" href="{{ url_for('home') }}">Home</a>
+        <a class="topbar__link" href="{{ url_for('profile') }}">Profile</a>
+      {% endif %}
     </div>
 
     <div class="topbar__right">

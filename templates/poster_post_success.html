@@ -5,7 +5,7 @@
     <h2 class="card__title poster-success__title">Event posted successfully</h2>
     <p class="poster-success__message">"{{ event_title }}" is now live. Attendees can find it on the home page and RSVP.</p>
     <div class="poster-success__actions">
-      <a href="{{ url_for('home') }}" class="btn">Go to Home</a>
+      <a href="{{ url_for('dashboard') }}" class="btn">Go to Dashboard</a>
       <a href="{{ url_for('event_detail', event_id=event_id) }}" class="topbar__link">View event</a>
     </div>
   </article>

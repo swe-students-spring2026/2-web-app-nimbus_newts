@@ -11,11 +11,9 @@
 
   <section class="user-events">
     {% if user.role == "organization" or user.role == "Organizer" %}
-      <h2 class="profile-section__title">Manage Your Events</h2>
-      <p class="profile-section__intro">As an Organization, you can edit or manage the events below.</p>
-      <p class="profile-section__actions">
-        <a href="{{ url_for('poster_post') }}" class="btn">+ Create New Event</a>
-      </p>
+      <h2 class="profile-section__title">Manage Your RSVPs</h2>
+      <p class="profile-section__intro">As an Organization, you can view your RSVPs below.</p>
+    
     {% else %}
       <h2 class="profile-section__title">Your Upcoming Schedule</h2>
       <p class="profile-section__intro">Here are the events you are attending:</p>
@@ -27,14 +25,23 @@
           <article class="card profile-event-card">
             <h3 class="card__title">{{ event.title }}</h3>
             <div class="card__meta">
-              <p><strong>Organizer:</strong> {{ event.organizer_name }}</p>
-              <p><strong>When:</strong> {{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</p>
-              <p><strong>Where:</strong> {{ event.location }}</p>
-              <p><strong>Category:</strong> {{ event.category }}</p>
+              {% if user.role == "organization" or user.role == "Organizer" %}
+                <p><strong>When:</strong> {{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</p>
+                <p><strong>RSVPs:</strong> 
+                  {% if event.capacity %}
+                    {{ event.rsvp_user_ids | length }}/{{ event.capacity }}
+                  {% else %}
+                    {{ event.rsvp_user_ids | length }}
+                  {% endif %}
+                </p>
+              {% else %}
+                <p><strong>Organizer:</strong> {{ event.organizer_name }}</p>
+                <p><strong>Where:</strong> {{ event.location }}</p>
+                <p><strong>Category:</strong> {{ event.category }}</p>
+                <p><strong>When:</strong> {{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</p>
+              {% endif %}
             </div>
-            {% if user.role == "organization" or user.role == "Organizer" %}
-              <a href="{{ url_for('poster_edit', event_id=event.id) }}" class="btn profile-event-card__btn">Edit Event</a>
-            {% else %}
+            {% if user.role == "seeker" %}
               <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn profile-event-card__btn">View Details</a>
             {% endif %}
           </article>
@@ -43,5 +50,29 @@
         <p class="profile-empty">No events to show right now.</p>
       {% endif %}
     </div>
+    {% if user.role == "organization" or user.role == "Organizer" %}
+      <h2 class="pastevents">Manage Your Past Events</h2>
+      <div class="cards">
+        {% if past_events %}
+            {% for event in past_events %}
+                <article class="card profile-event-card">
+                    <h3 class="card__title">{{ event.title }}</h3>
+                    <div class="card__meta">
+                        <p><strong>When:</strong> {{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</p>
+                        <p><strong>RSVPs:</strong>
+                            {% if event.capacity %}
+                                {{ event.rsvp_user_ids | length }}/{{ event.capacity }}
+                            {% else %}
+                                {{ event.rsvp_user_ids | length }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <p class="profile-empty">No Past Events.</p>
+        {% endif %}
+    </div>
+    {% endif %}
   </section>
 {% endblock %}

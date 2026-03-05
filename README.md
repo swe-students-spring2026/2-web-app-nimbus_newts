@@ -16,10 +16,10 @@ python3 -m venv .venv
 
 to activate virtual environment:
 source .venv/bin/activate
------ 
+
 to install requirements for running the app:
 pip install -r requirements.txt
------ 
+
 to run the app locally:
 python app.py
 ## Task boards

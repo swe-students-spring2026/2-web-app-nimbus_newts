@@ -11,7 +11,7 @@
     </div>
 
     <div class="filters">
-      {% set cats = ["All","Sports","Academic","Arts","Social", "Other", "Today"] %}
+      {% set cats = ["All","Sports","Academic","Arts","Social", "Other"] %}
       {% for c in cats %}
         <a class="pill {% if category == c %}is-active{% endif %}"
           href="{{ url_for('home', q=q, category=c) }}">

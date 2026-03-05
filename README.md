@@ -8,20 +8,31 @@ A single place for the NYU community to post, discover, and RSVP to campus event
 
 ## User stories
 
-[User stories](https://github.com/swe-students-spring2026/software-engineering-spring-2026-2-web-app-web-app-exercise/actions)
+[User Stories](https://github.com/swe-students-spring2026/software-engineering-spring-2026-2-web-app-web-app-exercise/actions)
 ## Steps necessary to run the software
 
-to make virtual environment:
-python3 -m venv .venv
+1. Clone the repository
 
-to activate virtual environment:
-source .venv/bin/activate
+2. Install pipenv:
+   pip3 install pipenv
 
-to install requirements for running the app:
-pip install -r requirements.txt
+3. Activate the virtual environment:
+   python3 -m pipenv shell
 
-to run the app locally:
-python app.py
+4. Install dependencies:
+   pip3 install -r requirements.txt
+
+5. Create a .env file with these variables:
+   MONGO_DBNAME=
+   MONGO_HOST=
+   MONGO_USERNAME=
+   MONGO_PASSWORD=
+   SECRET_KEY=
+   MONGO_TLS_SKIP_VERIFY=true
+
+6. Run the app:
+   python3 app.py
+
 ## Task boards
 
 [Sprint 1](https://github.com/orgs/swe-students-spring2026/projects/23)

@@ -28,6 +28,9 @@
     <label>Event Location</label>
         <input type="text" name="location" value="{{ event.location }}">
 
+    <label>Capacity (optional)</label>
+    <input class="auth-form__input" type="number" name="capacity" min="1" placeholder="Leave blank for unlimited" value="{{ event.capacity or '' }}">    
+
     <label>Category</label>
         <select name="category">
             <option {% if event.category == "Academic" %}selected{% endif %}>Academic</option>

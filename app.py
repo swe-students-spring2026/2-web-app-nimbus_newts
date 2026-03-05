@@ -378,6 +378,7 @@ def poster_edit(event_id):
         title = (request.form.get("title") or "").strip()
         description = (request.form.get("description") or "").strip()
         location = (request.form.get("location") or "").strip()
+        capacity = (request.form.get("capacity") or "").strip()
         category = (request.form.get("category") or "").strip()
         date_str = (request.form.get("date") or "").strip()
         time_str = (request.form.get("time") or "").strip()
@@ -410,6 +411,7 @@ def poster_edit(event_id):
                 "title": title,
                 "description": description,
                 "location": location,
+                "capacity": int(capacity) if capacity.isdigit() else None,
                 "category": category,
                 "date": date_display,
                 "time": time_display,
